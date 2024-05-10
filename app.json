@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "vina-tv",
-    "slug": "vina-tv",
+    "name": "VinaTv",
+    "scheme":"VinaTv",
+    "slug": "VinaTv",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
