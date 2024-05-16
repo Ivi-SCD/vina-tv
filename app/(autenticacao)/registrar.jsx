@@ -1,15 +1,19 @@
-import { View, Text, ScrollView, Image, Modal, Alert } from 'react-native'
+import { View, Text, ScrollView, Image, Modal, Pressable, Alert } from 'react-native' 
 import React, { useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { icons } from '../../constants'
 import Formulario from '../../components/Formulario'
 import CustomButton from '../../components/CustomButtom'
-import { Link } from 'expo-router'
+import { Link, router } from 'expo-router'
 
 import axios from 'axios'
+import { createUser } from '../../lib/appwrite'
+import { useGlobalContext } from '../../context/GlobalProvider'
 
 const Registrar = () => {
+
+  const {setUser, setIsLoggedIn} = useGlobalContext()
 
   const [form, setForm] = useState({
     nome: '',
@@ -23,13 +27,16 @@ const Registrar = () => {
     complemento:''
   });
 
-  const [error, setError] = useState(false)
-  const [modalVisible, setModalVisible] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [modalVisible, setModalVisible] = useState(false);
 
   const fetchAddressInfo = async () => {
     try {
+      
       const response = await axios.get(`https://viacep.com.br/ws/${form.cep}/json/`);
+      
+      if(response.data.erro) throw new Error('Ocorrou um erro inesperado')
+
       const { localidade, bairro, logradouro } = response.data;
       setForm({
         ...form,
@@ -37,18 +44,39 @@ const Registrar = () => {
         bairro: bairro,
         rua: logradouro,
       });
-      setError(false)
-    } catch (error) {
-      setError(true);
+    } catch (err) {
+      setForm({
+        ...form,
+        cidade: '',
+        bairro: '',
+        rua: '',
+      });
       setModalVisible(true)
-      console.error('Error fetching address information:', error, form.cep);
     }
   };
   
 
-  const submit = () => {
+  const submit = async () => {
+    if (!form.nome || !form.email || !form.password || !form.cep 
+      || !form.cidade || !form.bairro || !form.rua) {
+      Alert.alert('Error', 'Por favor complete todos os campos.')
+    } 
 
-  }
+    setIsSubmitting(true)
+
+    try {
+      const result = await createUser(form.email, form.password, form.nome, form.cep,
+        form.cidade, form.bairro, form.rua, form.numero, form.complemento)
+      
+      setUser(result);
+      setIsLoggedIn(true);
+      router.replace('/home')
+    } catch(error) {
+      Alert.alert('Error', error.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  };
 
   return (
     <SafeAreaView className="bg-primaryblack h-full">
@@ -57,13 +85,26 @@ const Registrar = () => {
 
           <Modal
           animationType="slide"
-          transparent={!modalVisible}
+          transparent={true}
           visible={modalVisible}
           onRequestClose={() => {
-            Alert.alert("Falha em encontrar o CEP. Tente novamente.")
-            setModalVisible(false)
+            setModalVisible(!modalVisible);
           }}
-          />
+        >
+          <View className='flex-start mt-5 justify-center items-center bg-opacity-15'>
+            <View className='bg-gray-800 p-4 rounded-lg bg-opacity-25'>
+              <Text className='text-lg font-bold mb-4 text-center text-white'>
+                Falha em encontrar o CEP. Tente novamente.
+              </Text>
+              <Pressable
+                className='bg-primaryorange px-4 py-2 rounded-lg'
+                onPress={() => setModalVisible(!modalVisible)}
+              >
+                <Text className='text-white font-bold text-center'>Fechar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
 
           <Image source={icons.logo}
           resizeMode='contain' className="w-[115px] h-[75px]"/>
@@ -90,9 +131,8 @@ const Registrar = () => {
 
           <Formulario 
           title="Senha"
-          value={form.senha}
-          handleChangeText={(e) => setForm({ ...form,
-            senha: e})}
+          value={form.password}
+          handleChangeText={(e) => setForm({ ...form, password: e})}
           otherStyles="mt-3"
           keyboardType="password"/>
 
@@ -136,7 +176,7 @@ const Registrar = () => {
           title="Numero"
           value={form.numero}
           handleChangeText={(e) => setForm({...form, numero: e})}
-          otherStyles="mt=3"
+          otherStyles="mt-3"
           keyboardType="numeric"
           />
 
