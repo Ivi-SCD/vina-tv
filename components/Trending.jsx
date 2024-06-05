@@ -1,17 +1,23 @@
-import { View, Text, FlatList } from 'react-native'
-import React from 'react'
+import { FlatList, Image, Text, View } from 'react-native';
+import React from 'react';
 
-const Trending = ({filmes}) => {
+const Trending = ({ filmes }) => {
   return (
     <FlatList
       data={filmes}
-      keyExtractor={(item) => item.$id}
-      renderItem={({item}) => (
-        <Text className="text-3xl font-rvmedium text-white">{item.id}</Text>
+      keyExtractor={(item) => item.titulo}
+      renderItem={({ item }) => (
+        <View className="flex-shrink-0 m-4">
+          <Image
+            source={{ uri: item.url }}
+            style={{ width: 150, height: 200, borderRadius: 10 }}
+          />
+          <Text className="mt-2 text-lg font-semibold text-white">{item.titulo}</Text>
+        </View>
       )}
       horizontal
     />
-  )
-}
+  );
+};
 
-export default Trending
+export default Trending;

@@ -36,7 +36,7 @@ const Login = () => {
       Alert.alert("Success", "Usuario logado com sucesso.");
       router.replace("/home");
     } catch(error) {
-      Alert.alert("Error", error.message);
+      
     } finally {
       setIsSubmitting(false);
     }
